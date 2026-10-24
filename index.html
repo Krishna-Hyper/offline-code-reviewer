@@ -1,0 +1,551 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Offline Code Reviewer</title>
+  <meta name="description" content="Review code locally with an open-weight AI model — nothing leaves your laptop." />
+  <style>
+    /* ── Reset & base ─────────────────────────────────────────── */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --accent: #238636;
+      --accent-h: #2ea043;
+      --danger: #da3633;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --code-bg: #010409;
+      --radius: 8px;
+      --font-mono: "Cascadia Code", "Fira Code", "Consolas", monospace;
+      --font-ui: system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+
+    html,
+    body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-ui);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* ── Layout ───────────────────────────────────────────────── */
+    .app {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      min-height: 100vh;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+
+    /* ── Header ───────────────────────────────────────────────── */
+    header {
+      padding: 20px 0 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #238636, #0d74d1);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    header h1 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    header p {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+
+    .badge {
+      margin-left: auto;
+      font-size: 0.7rem;
+      background: #161b22;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 3px 10px;
+      color: var(--muted);
+    }
+
+    /* ── Main two-column grid ─────────────────────────────────── */
+    main {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      padding: 16px 0;
+      min-height: 0;
+    }
+
+    @media (max-width: 720px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ── Panel ────────────────────────────────────────────────── */
+    .panel {
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      flex-shrink: 0;
+    }
+
+    .panel-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    /* ── Controls ─────────────────────────────────────────────── */
+    .controls {
+      display: flex;
+      gap: 8px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+
+    select {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      flex: 1;
+      min-width: 110px;
+    }
+
+    select:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    /* ── Textarea ─────────────────────────────────────────────── */
+    #code-input {
+      flex: 1;
+      resize: none;
+      background: var(--code-bg);
+      color: #c9d1d9;
+      border: none;
+      padding: 14px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      line-height: 1.7;
+      outline: none;
+      min-height: 320px;
+    }
+
+    #code-input::placeholder {
+      color: #484f58;
+    }
+
+    /* ── Action buttons ───────────────────────────────────────── */
+    .actions {
+      display: flex;
+      gap: 8px;
+      padding: 10px 14px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 7px 16px;
+      transition: background 0.15s, opacity 0.15s;
+    }
+
+    #btn-review {
+      background: var(--accent);
+      color: #fff;
+      flex: 1;
+    }
+
+    #btn-review:hover:not(:disabled) {
+      background: var(--accent-h);
+    }
+
+    #btn-review:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #btn-sample {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    #btn-sample:hover {
+      background: var(--border);
+      color: var(--text);
+    }
+
+    #btn-clear {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    #btn-clear:hover {
+      background: #21262d;
+      color: var(--text);
+    }
+
+    /* ── Output ───────────────────────────────────────────────── */
+    #output {
+      flex: 1;
+      padding: 14px;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      line-height: 1.75;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: #c9d1d9;
+      min-height: 320px;
+    }
+
+    #output .placeholder {
+      color: #484f58;
+      font-style: italic;
+      font-family: var(--font-ui);
+    }
+
+    #output .md-h2 {
+      color: #79c0ff;
+      font-weight: bold;
+      display: block;
+      margin-top: 0.8em;
+    }
+
+    #output .md-li {
+      color: #c9d1d9;
+      display: block;
+      margin-left: 1em;
+    }
+
+    #output .md-err {
+      color: var(--danger);
+    }
+
+    /* ── Status bar ───────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 8px 0;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    #status {
+      flex: 1;
+    }
+
+    #status.ok {
+      color: var(--accent-h);
+    }
+
+    #status.err {
+      color: var(--danger);
+    }
+
+    #status.busy {
+      color: #d29922;
+    }
+
+    #elapsed {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border: 2px solid var(--muted);
+      border-top-color: var(--accent-h);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 4px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+
+    <header>
+      <div class="logo">&#128269;</div>
+      <div>
+        <h1>Offline Code Reviewer</h1>
+        <p>100% local &middot; powered by Ollama &middot; nothing leaves your laptop</p>
+      </div>
+      <span class="badge">qwen3:4b</span>
+    </header>
+
+    <main>
+
+      <!-- Left: input -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-dot"></span>
+          Code Input
+        </div>
+
+        <div class="controls">
+          <select id="sel-lang" title="Language">
+            <option value="auto-detect">&#128270; Auto-detect</option>
+            <option value="Python">Python</option>
+            <option value="JavaScript">JavaScript</option>
+            <option value="TypeScript">TypeScript</option>
+            <option value="Java">Java</option>
+            <option value="C">C</option>
+            <option value="C++">C++</option>
+            <option value="Go">Go</option>
+            <option value="Rust">Rust</option>
+            <option value="SQL">SQL</option>
+            <option value="Bash">Bash</option>
+            <option value="git diff">Git Diff</option>
+          </select>
+
+          <select id="sel-focus" title="Review focus">
+            <option value="general">&#129488; General</option>
+            <option value="bugs">&#128027; Bugs</option>
+            <option value="security">&#128274; Security</option>
+            <option value="performance">&#9889; Performance</option>
+          </select>
+        </div>
+
+        <textarea id="code-input" placeholder="Paste code or a git diff here&#8230;" spellcheck="false"
+          autocorrect="off" autocapitalize="off"></textarea>
+
+        <div class="actions">
+          <button id="btn-review">&#9654; Review</button>
+          <button id="btn-sample">Load sample</button>
+          <button id="btn-clear">Clear</button>
+        </div>
+      </div>
+
+      <!-- Right: output -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-dot" id="out-dot" style="background:#484f58"></span>
+          Review Output
+        </div>
+
+        <div id="output">
+          <span class="placeholder">Review results will appear here as they stream in&#8230;</span>
+        </div>
+      </div>
+
+    </main>
+
+    <footer>
+      <span id="status">Ready</span>
+      <span id="elapsed"></span>
+      <span>Model: qwen3:4b &middot; Ollama localhost:11434</span>
+    </footer>
+
+  </div>
+
+  <script>
+    // ── Sample snippet ──────────────────────────────────────────────
+    // Three classic bugs on purpose:
+    //   1. SQL injection  — unsanitised f-string inserted into query
+    //   2. Hardcoded password — DB_PASSWORD in plain source
+    //   3. Off-by-one — range(len+1) causes IndexError on last step
+    const SAMPLE = `import sqlite3\n\nDB_PASSWORD = "supersecret123"   # hardcoded credential\n\ndef get_user(username):\n    conn = sqlite3.connect("users.db")\n    cursor = conn.cursor()\n    # SQL injection: username is not sanitised\n    query = f"SELECT * FROM users WHERE name = \'{username}\'"\n    cursor.execute(query)\n    return cursor.fetchone()\n\ndef sum_list(numbers):\n    total = 0\n    # Off-by-one: range should be len(numbers), not len(numbers)+1\n    for i in range(len(numbers) + 1):\n        total += numbers[i]\n    return total\n\nif __name__ == "__main__":\n    print(get_user("alice"))\n    print(sum_list([1, 2, 3]))\n`;
+
+    // ── DOM refs ────────────────────────────────────────────────────
+    const codeInput = document.getElementById("code-input");
+    const selLang = document.getElementById("sel-lang");
+    const selFocus = document.getElementById("sel-focus");
+    const btnReview = document.getElementById("btn-review");
+    const btnSample = document.getElementById("btn-sample");
+    const btnClear = document.getElementById("btn-clear");
+    const output = document.getElementById("output");
+    const outDot = document.getElementById("out-dot");
+    const statusEl = document.getElementById("status");
+    const elapsedEl = document.getElementById("elapsed");
+
+    // ── Timer helpers ───────────────────────────────────────────────
+    let timerID = null;
+    let startTime = null;
+
+    function startTimer() {
+      startTime = Date.now();
+      timerID = setInterval(() => {
+        const s = ((Date.now() - startTime) / 1000).toFixed(1);
+        elapsedEl.textContent = s + "s";
+      }, 100);
+    }
+
+    function stopTimer() { clearInterval(timerID); }
+
+    function setStatus(msg, cls = "") {
+      statusEl.textContent = msg;
+      statusEl.className = cls;
+    }
+
+    function setDot(color) { outDot.style.background = color; }
+
+    // ── Lightweight markdown colouring ──────────────────────────────
+    // Escapes HTML then styles ## headings and bullet list items.
+    function renderMarkdown(raw) {
+      const esc = raw
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+      return esc
+        .replace(/^## (.+)$/gm, '<span class="md-h2">## $1</span>')
+        .replace(/^(- .+)$/gm, '<span class="md-li">$1</span>');
+    }
+
+    // ── Load sample ─────────────────────────────────────────────────
+    btnSample.addEventListener("click", () => {
+      codeInput.value = SAMPLE;
+      selLang.value = "Python";
+      selFocus.value = "general";
+      codeInput.focus();
+    });
+
+    // ── Clear ────────────────────────────────────────────────────────
+    btnClear.addEventListener("click", () => {
+      codeInput.value = "";
+      output.innerHTML = '<span class="placeholder">Review results will appear here as they stream in&#8230;</span>';
+      setStatus("Ready");
+      setDot("#484f58");
+      elapsedEl.textContent = "";
+      stopTimer();
+    });
+
+    // ── Review ───────────────────────────────────────────────────────
+    btnReview.addEventListener("click", async () => {
+      const code = codeInput.value.trim();
+      if (!code) {
+        setStatus("Paste some code first.", "err");
+        return;
+      }
+
+      btnReview.disabled = true;
+      output.innerHTML = '<span class="spinner"></span> Waiting for model\u2026';
+      setDot("#d29922");
+      setStatus("Reviewing\u2026", "busy");
+      elapsedEl.textContent = "0.0s";
+      startTimer();
+
+      let rawText = "";
+
+      try {
+        const res = await fetch("/review", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code: code,
+            language: selLang.value,
+            focus: selFocus.value,
+          }),
+        });
+
+        if (!res.ok) throw new Error("Server returned " + res.status);
+
+        // Read the streaming plain-text body chunk by chunk
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        output.innerHTML = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          rawText += decoder.decode(value, { stream: true });
+          output.innerHTML = renderMarkdown(rawText);
+          output.scrollTop = output.scrollHeight;
+        }
+
+        stopTimer();
+        const total = ((Date.now() - startTime) / 1000).toFixed(1);
+        setStatus("Done in " + total + "s", "ok");
+        setDot("#238636");
+
+      } catch (err) {
+        stopTimer();
+        output.innerHTML =
+          '<span class="md-err">Error: ' + err.message +
+          '\n\nMake sure the backend is running:\n' +
+          '  python -m uvicorn main:app --reload</span>';
+        setStatus("Error \u2014 see output panel", "err");
+        setDot("#da3633");
+      } finally {
+        btnReview.disabled = false;
+      }
+    });
+
+    // ── Keyboard shortcut: Ctrl+Enter submits ───────────────────────
+    codeInput.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        btnReview.click();
+      }
+    });
+  </script>
+</body>
+
+</html>
