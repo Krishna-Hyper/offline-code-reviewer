@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -92,6 +92,21 @@
       padding: 3px 10px;
       color: var(--muted);
     }
+
+    /* ── Ollama status chip ───────────────────────────────────── */
+    #ollama-status {
+      margin-left: auto;
+      font-size: 0.72rem;
+      border-radius: 20px;
+      padding: 3px 10px;
+      border: 1px solid var(--border);
+      background: #161b22;
+      color: var(--muted);
+      white-space: nowrap;
+      transition: color 0.3s, border-color 0.3s;
+    }
+    #ollama-status.online  { color: #3fb950; border-color: #238636; }
+    #ollama-status.offline { color: var(--danger); border-color: var(--danger); }
 
     /* ── Main two-column grid ─────────────────────────────────── */
     main {
@@ -338,7 +353,7 @@
         <h1>Offline Code Reviewer</h1>
         <p>100% local &middot; powered by Ollama &middot; nothing leaves your laptop</p>
       </div>
-      <span class="badge">qwen3:4b</span>
+      <span id="ollama-status">⏳ Checking Ollama…</span>
     </header>
 
     <main>
@@ -407,6 +422,34 @@
   </div>
 
   <script>
+    // ── Ollama health check ─────────────────────────────────────────
+    const ollamaStatusEl = document.getElementById("ollama-status");
+
+    async function checkOllama() {
+      try {
+        const r = await fetch("/health");
+        const d = await r.json();
+        if (!d.ollama_running) {
+          ollamaStatusEl.textContent = "⚠ Ollama offline — run: ollama serve";
+          ollamaStatusEl.className = "offline";
+          return;
+        }
+        if (!d.model_installed) {
+          ollamaStatusEl.textContent = `⚠ Model ${d.model} not found — run: ollama pull ${d.model}`;
+          ollamaStatusEl.className = "offline";
+          return;
+        }
+        ollamaStatusEl.textContent = `Model: ${d.model} (local, Ollama) ✓ online`;
+        ollamaStatusEl.className = "online";
+      } catch {
+        ollamaStatusEl.textContent = "⚠ Backend unreachable";
+        ollamaStatusEl.className = "offline";
+      }
+    }
+
+    checkOllama();                    // on load
+    setInterval(checkOllama, 30_000); // re-check every 30 s
+
     // ── Sample snippet ──────────────────────────────────────────────
     // Three classic bugs on purpose:
     //   1. SQL injection  — unsanitised f-string inserted into query
