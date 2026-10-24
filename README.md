@@ -36,7 +36,7 @@ Cloud AI code-review tools upload your code to someone else's servers. For priva
 | **Size class** | Within the 10B small-model limit |
 | **Local runtime** | [Ollama](https://ollama.com), model tag `qwen3:4b` |
 | **Model card** | https://huggingface.co/Qwen/Qwen3-4B |
-| **License** | Apache 2.0 (verify at the model card link above) |
+| **License** | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0), as shown on the [model card](https://huggingface.co/Qwen/Qwen3-4B) |
 | **Cloud APIs** | None. No API keys are used anywhere in this project. |
 
 ---
@@ -100,7 +100,7 @@ The same commands work in any terminal. Replace `start` in step 5 with `open` (m
 
 ## Agent Skill
 
-`skills/code-review/SKILL.md` follows the [Agent Skills open standard](https://developers.googleblog.com/en/agent-skills-open-standard/). It contains YAML frontmatter (`name`, `description`, `license`, `metadata`) that AI coding assistants use to discover and activate the skill, followed by markdown instructions that mirror the system prompt in `main.py`: the five-section output format, the four review focus modes, the `/no_think` and temperature constraints, and the 6 000-character input limit.
+`skills/code-review/SKILL.md` follows the [Agent Skills open standard](https://agentskills.io/specification). It contains YAML frontmatter (`name`, `description`, `license`, `metadata`) that AI coding assistants use to discover and activate the skill, followed by markdown instructions that mirror the system prompt in `main.py`: the five-section output format, the four review focus modes, the `/no_think` and temperature constraints, and the 6 000-character input limit.
 
 ---
 
