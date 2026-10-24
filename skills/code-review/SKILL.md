@@ -35,16 +35,21 @@ Always respond in exactly this markdown structure. Every section is mandatory.
 One or two sentences describing what the code does.
 
 ## Bugs
-- Real bugs or crashes, with line references. Write "None found" if clean.
+Prefix every finding with a severity tag.
+- [CRITICAL] SQL injection on line 4 — user input is interpolated directly.
+- [WARNING]  Off-by-one: `range(len(numbers) + 1)` causes IndexError on last step.
+- [INFO]     Variable `x` could be renamed to `total` for clarity.
+Write "None found" if clean. Include line references.
 
 ## Improvements
-- Readability, naming, structure, performance suggestions.
+- Plain bullets, no severity tags. Readability, naming, structure, performance suggestions.
 
 ## Security
-- Injection risks, unsafe input handling, secrets in code. Write "None found" if clean.
+Prefix every finding with a severity tag (same scale as Bugs).
+Write "None found" if clean.
 
 ## Complexity
-Time and space complexity if the code is algorithmic; otherwise omit or write "N/A".
+Time and space complexity if the code is algorithmic. Otherwise write "N/A".
 ```
 
 ## Review Modes
@@ -65,6 +70,11 @@ All four sections must still appear regardless of focus mode.
 - **Be concise.** Do not rewrite the whole file.
 - **Reference lines.** When citing a bug or issue, include the line number or
   range (e.g. `line 14`, `lines 22-31`).
+- **Severity tags.** Prefix every Bugs and Security bullet with `[CRITICAL]`,
+  `[WARNING]`, or `[INFO]`:
+  - `[CRITICAL]` — crashes, data corruption, security holes
+  - `[WARNING]`  — logic errors, edge cases, likely mistakes
+  - `[INFO]`     — minor issues, style nits
 - **No think tokens.** Prepend system messages with `/no_think` to suppress
   chain-of-thought output when the underlying model supports it.
 - **Temperature.** Use `temperature: 0.2` to keep reviews deterministic and

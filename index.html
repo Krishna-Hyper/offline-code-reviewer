@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -6,8 +6,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Offline Code Reviewer</title>
   <meta name="description" content="Review code locally with an open-weight AI model — nothing leaves your laptop." />
+
+  <!-- Optional: Preconnect to Google Fonts for modern typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+
   <style>
-    /* ── Reset & base ─────────────────────────────────────────── */
+    /* ── Reset & Base ─────────────────────────────────────────── */
     *,
     *::before,
     *::after {
@@ -17,18 +25,31 @@
     }
 
     :root {
-      --bg: #0d1117;
-      --surface: #161b22;
-      --border: #30363d;
-      --accent: #238636;
-      --accent-h: #2ea043;
-      --danger: #da3633;
-      --text: #e6edf3;
-      --muted: #8b949e;
-      --code-bg: #010409;
-      --radius: 8px;
-      --font-mono: "Cascadia Code", "Fira Code", "Consolas", monospace;
-      --font-ui: system-ui, -apple-system, "Segoe UI", sans-serif;
+      /* Modern Slate Dark Theme */
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-hover: #334155;
+      --border: #334155;
+      --border-focus: #3b82f6;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --code-bg: #020617;
+
+      /* Accents */
+      --accent: #10b981;
+      /* Emerald */
+      --accent-h: #059669;
+      --accent-blue: #3b82f6;
+      /* Blue */
+      --accent-blue-h: #2563eb;
+      --danger: #ef4444;
+      /* Red */
+      --warning: #f59e0b;
+      /* Amber */
+
+      --radius: 12px;
+      --font-mono: 'JetBrains Mono', "Cascadia Code", "Fira Code", "Consolas", monospace;
+      --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
     }
 
     html,
@@ -39,6 +60,27 @@
       font-family: var(--font-ui);
       font-size: 15px;
       line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Custom Scrollbar ─────────────────────────────────────── */
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--code-bg);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--surface-hover);
+      border-radius: 5px;
+      border: 2px solid var(--code-bg);
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--muted);
     }
 
     /* ── Layout ───────────────────────────────────────────────── */
@@ -46,105 +88,115 @@
       display: grid;
       grid-template-rows: auto 1fr auto;
       min-height: 100vh;
-      max-width: 1100px;
+      max-width: 1200px;
       margin: 0 auto;
-      padding: 0 16px;
+      padding: 0 20px;
     }
 
     /* ── Header ───────────────────────────────────────────────── */
     header {
-      padding: 20px 0 14px;
+      padding: 24px 0 20px;
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 16px;
     }
 
     .logo {
-      width: 36px;
-      height: 36px;
-      background: linear-gradient(135deg, #238636, #0d74d1);
-      border-radius: 8px;
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-blue));
+      border-radius: 10px;
       display: grid;
       place-items: center;
-      font-size: 18px;
+      font-size: 20px;
       flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
     }
 
     header h1 {
-      font-size: 1.2rem;
+      font-size: 1.25rem;
       font-weight: 700;
-      letter-spacing: -0.3px;
+      letter-spacing: -0.5px;
     }
 
     header p {
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       color: var(--muted);
-      margin-top: 1px;
+      margin-top: 2px;
     }
 
-    .badge {
-      margin-left: auto;
-      font-size: 0.7rem;
-      background: #161b22;
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 3px 10px;
-      color: var(--muted);
-    }
-
-    /* ── Ollama status chip ───────────────────────────────────── */
+    /* ── Ollama Status Chip ───────────────────────────────────── */
     #ollama-status {
       margin-left: auto;
-      font-size: 0.72rem;
+      font-size: 0.75rem;
+      font-weight: 500;
       border-radius: 20px;
-      padding: 3px 10px;
+      padding: 4px 12px;
       border: 1px solid var(--border);
-      background: #161b22;
+      background: var(--surface);
       color: var(--muted);
       white-space: nowrap;
-      transition: color 0.3s, border-color 0.3s;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
-    #ollama-status.online  { color: #3fb950; border-color: #238636; }
-    #ollama-status.offline { color: var(--danger); border-color: var(--danger); }
 
-    /* ── Main two-column grid ─────────────────────────────────── */
+    #ollama-status.online {
+      color: #34d399;
+      border-color: rgba(16, 185, 129, 0.3);
+      background: rgba(16, 185, 129, 0.1);
+    }
+
+    #ollama-status.offline {
+      color: #f87171;
+      border-color: rgba(239, 68, 68, 0.3);
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    /* ── Main Two-Column Grid ─────────────────────────────────── */
     main {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      padding: 16px 0;
+      gap: 20px;
+      padding: 24px 0;
       min-height: 0;
     }
 
-    @media (max-width: 720px) {
+    @media (max-width: 768px) {
       main {
         grid-template-columns: 1fr;
       }
     }
 
-    /* ── Panel ────────────────────────────────────────────────── */
+    /* ── Panels ───────────────────────────────────────────────── */
     .panel {
       display: flex;
       flex-direction: column;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
       overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .panel:focus-within {
+      border-color: var(--muted);
     }
 
     .panel-header {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 10px 14px;
+      gap: 10px;
+      padding: 12px 16px;
       border-bottom: 1px solid var(--border);
       font-size: 0.8rem;
       font-weight: 600;
       color: var(--muted);
       text-transform: uppercase;
-      letter-spacing: 0.6px;
+      letter-spacing: 0.8px;
       flex-shrink: 0;
+      background: rgba(255, 255, 255, 0.02);
     }
 
     .panel-dot {
@@ -152,33 +204,44 @@
       height: 8px;
       border-radius: 50%;
       background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
     }
 
     /* ── Controls ─────────────────────────────────────────────── */
     .controls {
       display: flex;
-      gap: 8px;
-      padding: 10px 14px;
+      gap: 10px;
+      padding: 12px 16px;
       border-bottom: 1px solid var(--border);
       flex-wrap: wrap;
       flex-shrink: 0;
+      background: var(--surface);
     }
 
     select {
-      background: var(--bg);
+      background: var(--code-bg);
       color: var(--text);
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 5px 10px;
+      padding: 6px 12px;
       font-size: 0.85rem;
+      font-family: inherit;
       cursor: pointer;
       flex: 1;
-      min-width: 110px;
+      min-width: 120px;
+      transition: all 0.2s;
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      background-size: 14px;
+      padding-right: 32px;
     }
 
     select:focus {
-      outline: 2px solid var(--accent);
-      outline-offset: 1px;
+      outline: none;
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
     }
 
     /* ── Textarea ─────────────────────────────────────────────── */
@@ -186,9 +249,9 @@
       flex: 1;
       resize: none;
       background: var(--code-bg);
-      color: #c9d1d9;
+      color: #e2e8f0;
       border: none;
-      padding: 14px;
+      padding: 16px;
       font-family: var(--font-mono);
       font-size: 0.85rem;
       line-height: 1.7;
@@ -197,119 +260,218 @@
     }
 
     #code-input::placeholder {
-      color: #484f58;
+      color: #475569;
     }
 
-    /* ── Action buttons ───────────────────────────────────────── */
+    /* ── Action Buttons ───────────────────────────────────────── */
     .actions {
       display: flex;
-      gap: 8px;
-      padding: 10px 14px;
+      gap: 10px;
+      padding: 12px 16px;
       border-top: 1px solid var(--border);
       flex-shrink: 0;
+      background: var(--surface);
     }
 
     button {
       cursor: pointer;
-      border: none;
+      border: 1px solid transparent;
       border-radius: 6px;
       font-size: 0.85rem;
       font-weight: 600;
-      padding: 7px 16px;
-      transition: background 0.15s, opacity 0.15s;
+      font-family: inherit;
+      padding: 8px 16px;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    button:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
     }
 
     #btn-review {
       background: var(--accent);
       color: #fff;
       flex: 1;
+      box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+      btnReview.disabled=true;
+      btnFix.disabled=true;
+      codeInput.disabled=true; // Add this
     }
 
     #btn-review:hover:not(:disabled) {
       background: var(--accent-h);
+      box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+      transform: translateY(-1px);
     }
 
-    #btn-review:disabled {
-      opacity: 0.5;
+    #btn-fix {
+      background: var(--accent-blue) !important;
+      color: #fff !important;
+      flex: 1;
+      box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+      btnReview.disabled=true;
+      btnFix.disabled=true;
+      codeInput.disabled=true; // Add this
+    }
+
+    #btn-fix:hover:not(:disabled) {
+      background: var(--accent-blue-h) !important;
+      box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      opacity: 0.6;
       cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
     }
 
-    #btn-sample {
-      background: transparent;
-      color: var(--muted);
-      border: 1px solid var(--border);
-    }
-
-    #btn-sample:hover {
-      background: var(--border);
-      color: var(--text);
-    }
-
+    #btn-sample,
     #btn-clear {
       background: transparent;
       color: var(--muted);
       border: 1px solid var(--border);
     }
 
+    #btn-sample:hover,
     #btn-clear:hover {
-      background: #21262d;
+      background: var(--surface-hover);
       color: var(--text);
     }
 
     /* ── Output ───────────────────────────────────────────────── */
     #output {
       flex: 1;
-      padding: 14px;
+      padding: 16px;
       font-family: var(--font-mono);
-      font-size: 0.82rem;
+      font-size: 0.85rem;
       line-height: 1.75;
       overflow-y: auto;
       white-space: pre-wrap;
       word-break: break-word;
-      color: #c9d1d9;
+      color: #e2e8f0;
       min-height: 320px;
+      background: var(--code-bg);
     }
 
     #output .placeholder {
-      color: #484f58;
+      color: #475569;
       font-style: italic;
       font-family: var(--font-ui);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      text-align: center;
     }
 
     #output .md-h2 {
-      color: #79c0ff;
-      font-weight: bold;
+      color: #38bdf8;
+      font-family: var(--font-ui);
+      font-size: 1.1rem;
+      font-weight: 700;
       display: block;
-      margin-top: 0.8em;
+      margin-top: 1.2em;
+      margin-bottom: 0.5em;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
     }
 
     #output .md-li {
-      color: #c9d1d9;
       display: block;
       margin-left: 1em;
+      margin-bottom: 0.2em;
+      position: relative;
+    }
+
+    #output .md-li::before {
+      content: "•";
+      position: absolute;
+      left: -1em;
+      color: var(--muted);
     }
 
     #output .md-err {
       color: var(--danger);
+      background: rgba(239, 68, 68, 0.1);
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      display: block;
     }
 
-    /* ── Status bar ───────────────────────────────────────────── */
+    /* ── Severity Badges ──────────────────────────────────────── */
+    .sev {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      border-radius: 4px;
+      padding: 2px 6px;
+      margin-right: 6px;
+      vertical-align: text-bottom;
+      font-family: var(--font-ui);
+    }
+
+    .sev-critical {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .sev-warning {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fcd34d;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+
+    .sev-info {
+      background: rgba(56, 189, 248, 0.15);
+      color: #7dd3fc;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+    }
+
+    /* ── Inline Code Spans ────────────────────────────────────── */
+    #output code {
+      background: var(--surface-hover);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: #f8fafc;
+    }
+
+    #output pre {
+      background: transparent !important;
+      margin: 0;
+      font-family: var(--font-mono);
+    }
+
+    /* ── Status Bar ───────────────────────────────────────────── */
     footer {
       border-top: 1px solid var(--border);
-      padding: 8px 0;
+      padding: 12px 0;
       display: flex;
       align-items: center;
       gap: 16px;
-      font-size: 0.78rem;
+      font-size: 0.8rem;
       color: var(--muted);
     }
 
     #status {
       flex: 1;
+      font-weight: 500;
     }
 
     #status.ok {
-      color: var(--accent-h);
+      color: var(--accent);
     }
 
     #status.err {
@@ -317,23 +479,24 @@
     }
 
     #status.busy {
-      color: #d29922;
+      color: var(--warning);
     }
 
     #elapsed {
       font-variant-numeric: tabular-nums;
+      font-family: var(--font-mono);
     }
 
     .spinner {
       display: inline-block;
-      width: 10px;
-      height: 10px;
+      width: 12px;
+      height: 12px;
       border: 2px solid var(--muted);
-      border-top-color: var(--accent-h);
+      border-top-color: currentColor;
       border-radius: 50%;
-      animation: spin 0.7s linear infinite;
+      animation: spin 0.6s linear infinite;
       vertical-align: middle;
-      margin-right: 4px;
+      margin-right: 6px;
     }
 
     @keyframes spin {
@@ -358,7 +521,7 @@
 
     <main>
 
-      <!-- Left: input -->
+      <!-- Left: Input -->
       <div class="panel">
         <div class="panel-header">
           <span class="panel-dot"></span>
@@ -394,15 +557,16 @@
 
         <div class="actions">
           <button id="btn-review">&#9654; Review</button>
+          <button id="btn-fix">&#128736; Fix it</button>
           <button id="btn-sample">Load sample</button>
           <button id="btn-clear">Clear</button>
         </div>
       </div>
 
-      <!-- Right: output -->
+      <!-- Right: Output -->
       <div class="panel">
         <div class="panel-header">
-          <span class="panel-dot" id="out-dot" style="background:#484f58"></span>
+          <span class="panel-dot" id="out-dot" style="background: var(--muted); box-shadow: none;"></span>
           Review Output
         </div>
 
@@ -430,12 +594,12 @@
         const r = await fetch("/health");
         const d = await r.json();
         if (!d.ollama_running) {
-          ollamaStatusEl.textContent = "⚠ Ollama offline — run: ollama serve";
+          ollamaStatusEl.innerHTML = "⚠ Ollama offline &mdash; run: ollama serve";
           ollamaStatusEl.className = "offline";
           return;
         }
         if (!d.model_installed) {
-          ollamaStatusEl.textContent = `⚠ Model ${d.model} not found — run: ollama pull ${d.model}`;
+          ollamaStatusEl.innerHTML = `⚠ Model ${d.model} not found &mdash; run: ollama pull ${d.model}`;
           ollamaStatusEl.className = "offline";
           return;
         }
@@ -447,15 +611,11 @@
       }
     }
 
-    checkOllama();                    // on load
-    setInterval(checkOllama, 30_000); // re-check every 30 s
+    checkOllama();
+    setInterval(checkOllama, 30_000);
 
     // ── Sample snippet ──────────────────────────────────────────────
-    // Three classic bugs on purpose:
-    //   1. SQL injection  — unsanitised f-string inserted into query
-    //   2. Hardcoded password — DB_PASSWORD in plain source
-    //   3. Off-by-one — range(len+1) causes IndexError on last step
-    const SAMPLE = `import sqlite3\n\nDB_PASSWORD = "supersecret123"   # hardcoded credential\n\ndef get_user(username):\n    conn = sqlite3.connect("users.db")\n    cursor = conn.cursor()\n    # SQL injection: username is not sanitised\n    query = f"SELECT * FROM users WHERE name = \'{username}\'"\n    cursor.execute(query)\n    return cursor.fetchone()\n\ndef sum_list(numbers):\n    total = 0\n    # Off-by-one: range should be len(numbers), not len(numbers)+1\n    for i in range(len(numbers) + 1):\n        total += numbers[i]\n    return total\n\nif __name__ == "__main__":\n    print(get_user("alice"))\n    print(sum_list([1, 2, 3]))\n`;
+    const SAMPLE = `import sqlite3\nimport os\n\nAPI_KEY = "sk_live_9988776655"   # hardcoded credential\n\ndef get_profile(user_id):\n    conn = sqlite3.connect("database.db")\n    cursor = conn.cursor()\n    \n    # SQL injection\n    query = "SELECT * FROM profiles WHERE id = " + str(user_id)\n    cursor.execute(query)\n    \n    return cursor.fetchone()\n`;
 
     // ── DOM refs ────────────────────────────────────────────────────
     const codeInput = document.getElementById("code-input");
@@ -488,18 +648,31 @@
       statusEl.className = cls;
     }
 
-    function setDot(color) { outDot.style.background = color; }
+    function setDot(color, glow = true) {
+      outDot.style.background = color;
+      outDot.style.boxShadow = glow ? `0 0 8px ${color}` : 'none';
+    }
 
-    // ── Lightweight markdown colouring ──────────────────────────────
-    // Escapes HTML then styles ## headings and bullet list items.
+    // ── Markdown renderer ───────────────────────────────────────────
+    function severityBadge(tag) {
+      const t = tag.toUpperCase();
+      if (t === 'CRITICAL') return '<span class="sev sev-critical">CRITICAL</span>';
+      if (t === 'WARNING') return '<span class="sev sev-warning">WARNING</span>';
+      if (t === 'INFO') return '<span class="sev sev-info">INFO</span>';
+      return tag;
+    }
+
     function renderMarkdown(raw) {
       const esc = raw
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
+
       return esc
-        .replace(/^## (.+)$/gm, '<span class="md-h2">## $1</span>')
-        .replace(/^(- .+)$/gm, '<span class="md-li">$1</span>');
+        .replace(/^## (.+)$/gm, '<span class="md-h2">$1</span>')
+        .replace(/\[(CRITICAL|WARNING|INFO)\]/gi, (match, sev) => severityBadge(sev))
+        .replace(/^(- )(.*)$/gm, '<span class="md-li">$2</span>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>');
     }
 
     // ── Load sample ─────────────────────────────────────────────────
@@ -515,7 +688,7 @@
       codeInput.value = "";
       output.innerHTML = '<span class="placeholder">Review results will appear here as they stream in&#8230;</span>';
       setStatus("Ready");
-      setDot("#484f58");
+      setDot("var(--muted)", false);
       elapsedEl.textContent = "";
       stopTimer();
     });
@@ -529,8 +702,9 @@
       }
 
       btnReview.disabled = true;
-      output.innerHTML = '<span class="spinner"></span> Waiting for model\u2026';
-      setDot("#d29922");
+      btnFix.disabled = true;
+      output.innerHTML = '<div class="placeholder"><span class="spinner"></span> Waiting for model\u2026</div>';
+      setDot("var(--warning)");
       setStatus("Reviewing\u2026", "busy");
       elapsedEl.textContent = "0.0s";
       startTimer();
@@ -550,7 +724,6 @@
 
         if (!res.ok) throw new Error("Server returned " + res.status);
 
-        // Read the streaming plain-text body chunk by chunk
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         output.innerHTML = "";
@@ -566,18 +739,101 @@
         stopTimer();
         const total = ((Date.now() - startTime) / 1000).toFixed(1);
         setStatus("Done in " + total + "s", "ok");
-        setDot("#238636");
+        setDot("var(--accent)");
 
       } catch (err) {
         stopTimer();
-        output.innerHTML =
-          '<span class="md-err">Error: ' + err.message +
-          '\n\nMake sure the backend is running:\n' +
-          '  python -m uvicorn main:app --reload</span>';
-        setStatus("Error \u2014 see output panel", "err");
-        setDot("#da3633");
+        output.innerHTML = '<span class="md-err">Error: ' + err.message + '<br><br>Make sure the backend is running:<br><code>python -m uvicorn main:app --reload</code></span>';
+        setStatus("Error", "err");
+        setDot("var(--danger)");
       } finally {
         btnReview.disabled = false;
+        btnFix.disabled = false;
+      }
+    });
+
+    // ── Fix It ───────────────────────────────────────────────────────
+    const btnFix = document.getElementById("btn-fix");
+
+    btnFix.addEventListener("click", async () => {
+      const code = codeInput.value.trim();
+      if (!code) {
+        setStatus("Paste some code first.", "err");
+        return;
+      }
+
+      btnReview.disabled = true;
+      btnFix.disabled = true;
+      output.innerHTML = '<div class="placeholder"><span class="spinner"></span> Fixing code\u2026</div>';
+      setDot("var(--accent-blue)");
+      setStatus("Fixing\u2026", "busy");
+      elapsedEl.textContent = "0.0s";
+      startTimer();
+
+      let rawText = "";
+
+      try {
+        const res = await fetch("/fix", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code: code,
+            language: selLang.value,
+          }),
+        });
+
+        if (!res.ok) throw new Error("Server returned " + res.status);
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        output.innerHTML = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          rawText += decoder.decode(value, { stream: true });
+
+          let cleanText = "";
+          const firstTick = rawText.indexOf("```");
+
+          if (firstTick !== -1) {
+            const firstNewline = rawText.indexOf("\n", firstTick);
+            if (firstNewline !== -1) {
+              const codeStart = firstNewline + 1;
+              const secondTick = rawText.indexOf("```", codeStart);
+
+              if (secondTick !== -1) {
+                cleanText = rawText.substring(codeStart, secondTick);
+              } else {
+                cleanText = rawText.substring(codeStart);
+              }
+            }
+          } else {
+            cleanText = "Generating fixed code…";
+          }
+
+          const esc = cleanText
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+
+          output.innerHTML = '<pre>' + esc + '</pre>';
+          output.scrollTop = output.scrollHeight;
+        }
+
+        stopTimer();
+        const total = ((Date.now() - startTime) / 1000).toFixed(1);
+        setStatus("Fixed in " + total + "s", "ok");
+        setDot("var(--accent-blue)");
+
+      } catch (err) {
+        stopTimer();
+        output.innerHTML = '<span class="md-err">Error: ' + err.message + '</span>';
+        setStatus("Error", "err");
+        setDot("var(--danger)");
+      } finally {
+        btnReview.disabled = false;
+        btnFix.disabled = false;
       }
     });
 
